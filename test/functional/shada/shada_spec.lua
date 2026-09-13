@@ -135,6 +135,37 @@ describe('ShaDa support code', function()
     )
   end)
 
+  it('allows concurrent writes without leaving temporary files', function()
+    wshada('')
+    local results = n.exec_lua(function(prog, fname)
+      local processes = {}
+      for _ = 1, 8 do
+        processes[#processes + 1] = vim.system({
+          prog,
+          '--headless',
+          '-u',
+          'NONE',
+          '-i',
+          'NONE',
+          '-c',
+          ('lua for _ = 1, 100 do vim.cmd.wshada(%q) end'):format(fname),
+          '-c',
+          'qa!',
+        })
+      end
+      local results = {}
+      for _, process in ipairs(processes) do
+        local result = process:wait()
+        results[#results + 1] = { result.code, result.stdout, result.stderr }
+      end
+      return results
+    end, n.nvim_prog, shada_fname)
+    for _, result in ipairs(results) do
+      eq({ 0, '', '' }, result)
+    end
+    eq({}, fn.glob(shada_fname .. '.tmp.*', false, true))
+  end)
+
   it('reads correctly various timestamps', function()
     local msgpack = {
       '\100', -- Positive fixnum 100

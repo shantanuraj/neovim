@@ -2856,12 +2856,11 @@ shada_write_file_nomerge: {}
         }
       }
 #endif
-      if (vim_rename(tempname, fname) == -1) {
+      if (os_rename(tempname, fname) != OK) {
         semsg(_(RNERR "Can't rename ShaDa file from %s to %s!"),
               tempname, fname);
       } else {
         did_remove = true;
-        os_remove(tempname);
       }
     } else {
       if (sw_ret == kSDWriteReadNotShada) {
